@@ -4,9 +4,14 @@ import bot.BeautyBot;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import config.ConfigLoader;
+import bot.workWithSQL;
+
+import java.sql.SQLException;
 
 public class Main {
-    public static void main(String[] args) throws TelegramApiException {
+
+
+    public static void main(String[] args) throws TelegramApiException, SQLException {
         String botToken = new ConfigLoader().getProperties().getProperty("bot_token");
         System.out.println(botToken);
         try {
@@ -31,7 +36,8 @@ public class Main {
             Exception e = var7;
             e.printStackTrace();
         }
-
+        workWithSQL test = new workWithSQL("jdbc:mysql://localhost:3306/mydbtest", "root","goddeskarina291005","users");
+        test.ReturnInfFromComponent("niacinomid");
     }
 }
 
