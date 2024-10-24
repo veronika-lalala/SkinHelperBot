@@ -13,12 +13,20 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
+import java.sql.SQLException;
+import java.util.Objects;
+
+
 
 public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
     private final TelegramClient telegramClient;
+    private int flag;
+    private workWithSQL informationAboutComponent= new workWithSQL("jdbc:mysql://localhost:3306/mydbtest", "root","goddeskarina291005","users");
 
     public BeautyBot(String botToken) {
+
         this.telegramClient = new OkHttpTelegramClient(botToken);
+        this.flag=0;
     }
 
     public void setButtons(SendMessage sendMessage) {
@@ -33,6 +41,19 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
         if (update.hasMessage() && update.getMessage().hasText()) {
             call_data = update.getMessage().getText();
             chat_id = update.getMessage().getChatId();
+            if(flag==1) {
+                try {
+                    String text = informationAboutComponent.ReturnInfFromComponent(call_data);
+                    if (Objects.equals(text, "")){
+                        text="нет такого компонента:(";
+                    }
+                    SendMessage newSay=this.newMessage(text,chat_id);
+                    send(newSay);
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+                flag = 0;
+            }
             switch (call_data) {
                 case "/start":
                     String userName = update.getMessage().getChat().getFirstName();
@@ -56,10 +77,12 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
                     this.send(message);
                     break;
                 case "structure":
+                    flag=2;
                     struct_message = this.newMessage("Введите состав вашего продукта!", chat_id);
                     this.send(struct_message);
                     break;
                 case "Component":
+                    flag=1;
                     comp_message = this.newMessage("Введите название актива", chat_id);
                     this.send(comp_message);
             }
