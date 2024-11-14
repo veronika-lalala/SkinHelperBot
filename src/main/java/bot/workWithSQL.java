@@ -1,36 +1,34 @@
 package bot;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-
 import java.sql.*;
 public  class workWithSQL {
     public static Connection connection;
-    public static Statement statement;
+    public static PreparedStatement statement;
     public ResultSet resultSet;
-    public String value;
     public String URL;
-    public  String USERNAME;
-    public  String PASSWORD;
-    public  String TABLE;
+    public String USERNAME;
+    public String PASSWORD;
+    public String TABLE;
 
-     public workWithSQL(String url, String username, String password, String table) {
-         this.URL= url;
-         this.USERNAME = username;
-         this.PASSWORD = password ;
-         this.TABLE = table ;
-     }
-    private void StartConnection(String SQL) throws SQLException {
-        connection = DriverManager.getConnection(URL,USERNAME,PASSWORD);
-        statement = connection.createStatement();
-        resultSet = statement.executeQuery(SQL);
+    public workWithSQL(String url, String username, String password, String table) {
+        this.URL = url;
+        this.USERNAME = username;
+        this.PASSWORD = password;
+        this.TABLE = table;
+    }
 
+    private void StartConnection() throws SQLException {
+        connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
     }
     public String ReturnInfFromComponent(String component) throws SQLException {
-        value = "select inf from " + TABLE + " where component='" + component + "';";
-        String massage="";
-        StartConnection(value);
+        String sql = "SELECT inf FROM " + TABLE + " WHERE component = ?";
+        StartConnection();
+        statement = connection.prepareStatement(sql);
+        statement.setString(1, component);
+        ResultSet resultSet = statement.executeQuery();
+        String result = "";
         while (resultSet.next()) {
-            massage = resultSet.getString("inf");
+            result = resultSet.getString("inf");
         }
-        return massage;
+        return result;
     }
 }
