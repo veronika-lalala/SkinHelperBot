@@ -1,6 +1,6 @@
 package bot;
 import java.sql.*;
-public  class workWithSQL {
+public  class WorkWithSQL {
     public static Connection connection;
     public static PreparedStatement statement;
     public String URL;
@@ -8,19 +8,19 @@ public  class workWithSQL {
     public String PASSWORD;
     public String TABLE;
 
-    public workWithSQL(String url, String username, String password, String table) {
+    public WorkWithSQL(String url, String username, String password, String table) {
         this.URL = url;
         this.USERNAME = username;
         this.PASSWORD = password;
         this.TABLE = table;
     }
 
-    private void StartConnection() throws SQLException {
+    private void startConnection() throws SQLException {
         connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
     }
-    public String ReturnInfFromComponent(String component) throws SQLException {
+    public String getInfFromComponent(String component) throws SQLException {
         String sql = "SELECT inf FROM " + TABLE + " WHERE component = ?";
-        StartConnection();
+        startConnection();
         statement = connection.prepareStatement(sql);
         statement.setString(1, component);
         ResultSet resultSet = statement.executeQuery();

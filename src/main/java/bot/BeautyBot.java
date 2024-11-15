@@ -15,10 +15,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 
 public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
@@ -26,7 +24,7 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
     private final TelegramClient telegramClient;
     private final Logic logic;
     private State state;
-    private final workWithSQL informationAboutComponent = new workWithSQL("jdbc:mysql://localhost:3306/mydbtest", "root", "goddeskarina291005", "users");
+    private final WorkWithSQL componentBase = new WorkWithSQL("jdbc:mysql://localhost:3306/mydbtest", "root", "goddeskarina291005", "users");
 
     public BeautyBot(String botToken) {
         this.telegramClient = new OkHttpTelegramClient(botToken);
@@ -38,6 +36,9 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
 //            }
 //        }
         System.out.println(state.name());
+    }
+    public WorkWithSQL getComponentBase(){
+        return componentBase;
     }
 
     public void setState(State state) {

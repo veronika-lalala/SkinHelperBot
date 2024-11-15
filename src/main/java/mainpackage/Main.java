@@ -4,7 +4,6 @@ import bot.BeautyBot;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import config.ConfigLoader;
-import bot.workWithSQL;
 
 import java.sql.SQLException;
 
