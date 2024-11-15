@@ -1,6 +1,8 @@
 package bot;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -14,93 +16,101 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 
-
 public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
+    private static final Logger log = LoggerFactory.getLogger(BeautyBot.class);
     private final TelegramClient telegramClient;
-    private int flag;
-    private workWithSQL informationAboutComponent= new workWithSQL("jdbc:mysql://localhost:3306/mydbtest", "root","goddeskarina291005","users");
+    private final Logic logic;
+    private State state;
+    private final workWithSQL informationAboutComponent = new workWithSQL("jdbc:mysql://localhost:3306/mydbtest", "root", "goddeskarina291005", "users");
 
     public BeautyBot(String botToken) {
-
         this.telegramClient = new OkHttpTelegramClient(botToken);
-        this.flag=0;
+        this.logic = new Logic();
+        this.state = State.DEFAULT;
+//        for (State value : State.values()) {
+//            if (value.name() == user.state) {
+//                this.state = value;
+//            }
+//        }
+        System.out.println(state.name());
+    }
+
+    public void setState(State state) {
+        this.state = state;
+    }
+
+    public State getState() {
+        return state;
     }
 
     public void setButtons(SendMessage sendMessage) {
         sendMessage.setReplyMarkup(ReplyKeyboardMarkup.builder().keyboardRow(new KeyboardRow(new String[]{"Помощь"})).keyboardRow(new KeyboardRow(new String[]{"Вернуться в начало"})).build());
     }
 
-    public void consume(Update update) {
-        String call_data;
-        long chat_id;
-        SendMessage struct_message;
-        SendMessage comp_message;
-        if (update.hasMessage() && update.getMessage().hasText()) {
-            call_data = update.getMessage().getText();
-            chat_id = update.getMessage().getChatId();
-            if(flag==1) {
-                try {
-                    String text = informationAboutComponent.ReturnInfFromComponent(call_data);
-                    if (Objects.equals(text, "")){
-                        text="нет такого компонента:(";
-                    }
-                    SendMessage newSay=this.newMessage(text,chat_id);
-                    send(newSay);
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-                flag = 0;
-            }
-            switch (call_data) {
-                case "/start":
-                    String userName = update.getMessage().getChat().getFirstName();
-                    struct_message = this.newMessage("Привет," + userName + " меня зовут SkinHelper! Я помогу тебе разобраться в уходе за кожей лица.\nСо мной ты поймешь какие компоненты в косметике подойдут именно тебе!", chat_id);
-                    struct_message.setReplyMarkup(InlineKeyboardMarkup.builder().keyboardRow(new InlineKeyboardRow(new InlineKeyboardButton[]{InlineKeyboardButton.builder().text("Что я умею").callbackData("I_can").build()})).build());
-                    this.send(struct_message);
-                    break;
-                case "Помощь":
-                    comp_message = this.newMessage("Сейчас я расскажу как правильно вводить данные. Про что хотите узнать, как использовать?", chat_id);
-                    comp_message.setReplyMarkup(InlineKeyboardMarkup.builder().keyboardRow(new InlineKeyboardRow(new InlineKeyboardButton[]{InlineKeyboardButton.builder().text("Узнать про работу с анализом состава").callbackData("help struct").build()})).keyboardRow(new InlineKeyboardRow(new InlineKeyboardButton[]{InlineKeyboardButton.builder().text("Узнать про работу с одним компонентом").callbackData("help comp").build()})).build());
-                    this.send(comp_message);
-                case "Вернуться ":
-            }
-        } else if (update.hasCallbackQuery()) {
-            call_data = update.getCallbackQuery().getData();
-            chat_id = update.getCallbackQuery().getMessage().getChatId();
-            switch (call_data) {
-                case "I_can":
-                    SendMessage message = this.newMessage("1. Я смогу помочь тебе выбрать подходящее уходовое средство, проанализировав состав продукта. Также я расскажу всю необходимую информацию об активных компонентах, и ,кроме того, предупрежу об опасностях для твоей кожи, скрывающихся в составе.\n2. Еще я смогу ответить на твои вопросы об отдельных активных веществах: объясню для чего они применяются, как они влияют на твою кожу, в чем принцип их работы.\nКак работает анализ состава?\nДля того, чтобы познакомится с составом поближе тебе необходимо:\n• Найти состав продукта в текстовом варианте (обязательно на английском!), в этом тебе может помочь любой онлайн магазин, где твое средство есть в наличии. В описании товара и должен быть состав.\n• Отправить состав мне в сообщении.\n• Любоваться результатом!\nКак узнать подробную информацию о компоненте?\nДля того, чтобы подробнее узнать о компоненте тебе необходимо:\n• Отправить мне сообщение, где будет название компонента (обязательно на английском!)\n• Любоваться результатом!\nЧем займемся?", chat_id);
-                    message.setReplyMarkup(InlineKeyboardMarkup.builder().keyboardRow(new InlineKeyboardRow(new InlineKeyboardButton[]{InlineKeyboardButton.builder().text("Анализ состава").callbackData("structure").build()})).keyboardRow(new InlineKeyboardRow(new InlineKeyboardButton[]{InlineKeyboardButton.builder().text("Информация о компоненте").callbackData("Component").build()})).build());
-                    this.send(message);
-                    break;
-                case "structure":
-                    flag=2;
-                    struct_message = this.newMessage("Введите состав вашего продукта!", chat_id);
-                    this.send(struct_message);
-                    break;
-                case "Component":
-                    flag=1;
-                    comp_message = this.newMessage("Введите название актива", chat_id);
-                    this.send(comp_message);
-            }
+    @Override
+    public void consume(Update update){
+
+        if (update.hasMessage()&& update.getMessage().hasText()){
+            long chat_id = update.getMessage().getChatId();
+            String message_text = update.getMessage().getText();
+            Message mes=new Message(message_text,null);
+            String userName = update.getMessage().getChat().getFirstName();
+            logic.processMessage(chat_id,mes,this,userName);//передали логике сообщение которое получили должна сделать всё и отправить сообщение там будут все ифы и проверки для сообщения
         }
-
+        else if(update.hasCallbackQuery()){
+            long chat_id_callback=update.getCallbackQuery().getMessage().getChatId();
+            String calldata = update.getCallbackQuery().getData();
+            logic.processCallback(chat_id_callback,calldata,this);
+        }
     }
-
+    //todo впихнуть создание меню, лучше вызывать когда просим ввести компонент и нет других кнопок
     private SendMessage newMessage(String new_text, long id) {
         SendMessage newMessage = SendMessage.builder().chatId(id).text(new_text).build();
         return newMessage;
     }
 
-    private void send(SendMessage message) {
+    public void send(long chatId, Message message) {
+        SendMessage sendMessage = SendMessage
+                .builder()
+                .text(message.getText())
+                .chatId(chatId)
+                .build();
+        if (message.getButtons()!=null) {
+            messageButtons(sendMessage, message.getButtons());
+        }
         try {
-            this.telegramClient.execute(message);
+            this.telegramClient.execute(sendMessage);
         } catch (TelegramApiException var3) {
             TelegramApiException e = var3;
             throw new RuntimeException(e);
         }
+
+
+
+    }
+    public void messageButtons(SendMessage sendMessage, List<Button> buttons){
+        //TODO написать чтобы корректно отображалось большое число кнопок
+        List<InlineKeyboardRow> rows=new ArrayList<>();
+        for (Button button :buttons ) {
+            System.out.println(button.getName());
+            InlineKeyboardButton butt = InlineKeyboardButton.builder()
+                    .text(button.getName())
+                    .callbackData(button.getCallback())
+                    .build();
+            InlineKeyboardRow row = new InlineKeyboardRow(new InlineKeyboardButton[]{butt});
+            rows.add(row);
+        }
+        InlineKeyboardMarkup replyMarkup=InlineKeyboardMarkup.builder()
+                .keyboard(rows)
+                .build();
+        sendMessage.setReplyMarkup(replyMarkup);
+
     }
 }
+
+
