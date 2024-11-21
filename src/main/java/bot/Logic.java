@@ -1,15 +1,11 @@
 package bot;
 
-import kotlin.collections.ArrayDeque;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import static java.awt.SystemColor.text;
 
 public class Logic {
     void processMessage(long chatId, Message message, BeautyBot bot, String userName) {
@@ -21,9 +17,33 @@ public class Logic {
                 if (Objects.equals(text, "")) {
                     text = "нет такого компонента:(";
                 }
-                newText=text;
-               // Message answ = new Message(text, null);
-                //bot.send(chatId, answ);
+                newText = text;
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+            bot.setState(State.DEFAULT);
+        }
+        if (bot.getState() == State.ALL) {
+            try {
+                String textFromMassage = message.getText();
+                String[] componentsList = Shape.messageParser(textFromMassage);
+                StringBuilder text = new StringBuilder();
+                for (String component : componentsList) {
+                    String detailInf = bot.getComponentBase().getDetailInfFromComponent(component);
+                    if (detailInf.isEmpty()) {
+                        continue;
+                    }
+                    else{
+                        text.append(component);
+                        text.append(":\n");
+                        text.append(detailInf);
+                        text.append('\n');
+                    }
+                }
+                if (text.isEmpty()) {
+                    text = new StringBuilder("ни одного компонента из состава не нашлось:(");
+                }
+                newText = text.toString();
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -70,4 +90,7 @@ public class Logic {
         Message answ = new Message(newText, buttons);
         bot.send(chatId, answ);
     }
+
+
 }
+
