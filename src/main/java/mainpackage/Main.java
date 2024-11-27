@@ -10,6 +10,7 @@ import java.sql.SQLException;
 public class Main {
 
 
+
     public static void main(String[] args) throws TelegramApiException, SQLException {
         String botToken = new ConfigLoader().getProperties().getProperty("bot_token");
         try {
@@ -34,6 +35,7 @@ public class Main {
             Exception e = var7;
             e.printStackTrace();
         }
+
 
     }
 }
