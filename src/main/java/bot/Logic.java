@@ -1,15 +1,20 @@
 package bot;
 
+import kotlin.io.encoding.Base64;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Queue;
 
-import static java.awt.SystemColor.text;
 
 public class Logic {
     void processMessage(long chatId, Message message, BeautyBot bot, String userName) {
         String newText = "";
+        int countComponents = 0;
+        Message allComponentsMessage = null;
+
         List<Button> buttons = new ArrayList<>();
         if (bot.getState() == State.INGREDIENT) {
             try {
@@ -22,22 +27,24 @@ public class Logic {
                 throw new RuntimeException(e);
             }
             bot.setState(State.DEFAULT);
-        }
-        if (bot.getState() == State.ALL) {
+        } else if (bot.getState() == State.ALL) {
             try {
                 String textFromMassage = message.getText();
                 String[] componentsList = Shape.messageParser(textFromMassage);
                 StringBuilder text = new StringBuilder();
                 for (String component : componentsList) {
-                    String detailInf = bot.getComponentBase().getDetailInfFromComponent(component);
+                    String detailInf = bot.getComponentBase().getInfFromComponent(component);
                     if (detailInf.isEmpty()) {
                         continue;
-                    }
-                    else{
+                    } else {
+                        Button componentButton = new Button(component, "Detailed:" + component);
+                        buttons.add(componentButton);
                         text.append(component);
                         text.append(":\n");
                         text.append(detailInf);
                         text.append('\n');
+                        countComponents += 1;
+
                     }
                 }
                 if (text.isEmpty()) {
@@ -48,7 +55,13 @@ public class Logic {
                 throw new RuntimeException(e);
             }
             bot.setState(State.DEFAULT);
+
         }
+        else if(bot.getState() == State.MORE){
+            System.out.println("more");
+            //todo возможность еще раз тыкать на кнопочки с компонентами
+        }
+
         switch (message.getText()) {
             case "/start":
                 newText = "Привет," + userName + " меня зовут SkinHelper! Я помогу тебе разобраться в уходе за кожей лица.\nСо мной ты поймешь какие компоненты в косметике подойдут именно тебе!";
@@ -68,7 +81,7 @@ public class Logic {
         bot.send(chatId, answer);
     }
 
-    void processCallback(long chatId, String callback, BeautyBot bot) {
+    void processCallback(long chatId, String callback, BeautyBot bot) throws SQLException {
         String newText = "";
         List<Button> buttons = new ArrayList<>();
         switch (callback) {
@@ -86,6 +99,15 @@ public class Logic {
             case "Component":
                 bot.setState(State.INGREDIENT);
                 newText = "Введите название актива";
+                break;
+            default:
+                if (callback.split(":")[0].equals("Detailed")) {
+                    bot.setState(State.MORE);
+                    String component = callback.split(":")[1];
+                    newText = bot.getComponentBase().getDetailInfFromComponent(component);
+                }
+                break;
+
         }
         Message answ = new Message(newText, buttons);
         bot.send(chatId, answ);
