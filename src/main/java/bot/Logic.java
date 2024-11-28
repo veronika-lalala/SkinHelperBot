@@ -1,20 +1,15 @@
 package bot;
 
-import kotlin.io.encoding.Base64;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Queue;
 
 
 public class Logic {
+    private Message allComponentsMessage;
     void processMessage(long chatId, Message message, BeautyBot bot, String userName) {
         String newText = "";
-        int countComponents = 0;
-        Message allComponentsMessage = null;
-
         List<Button> buttons = new ArrayList<>();
         if (bot.getState() == State.INGREDIENT) {
             try {
@@ -27,7 +22,8 @@ public class Logic {
                 throw new RuntimeException(e);
             }
             bot.setState(State.DEFAULT);
-        } else if (bot.getState() == State.ALL) {
+        }
+        if (bot.getState() == State.ALL) {
             try {
                 String textFromMassage = message.getText();
                 String[] componentsList = Shape.messageParser(textFromMassage);
@@ -43,8 +39,6 @@ public class Logic {
                         text.append(":\n");
                         text.append(detailInf);
                         text.append('\n');
-                        countComponents += 1;
-
                     }
                 }
                 if (text.isEmpty()) {
@@ -55,11 +49,8 @@ public class Logic {
                 throw new RuntimeException(e);
             }
             bot.setState(State.DEFAULT);
+            allComponentsMessage=new Message("Выберите еще компонент\n",buttons);
 
-        }
-        else if(bot.getState() == State.MORE){
-            System.out.println("more");
-            //todo возможность еще раз тыкать на кнопочки с компонентами
         }
 
         switch (message.getText()) {
@@ -81,9 +72,14 @@ public class Logic {
         bot.send(chatId, answer);
     }
 
-    void processCallback(long chatId, String callback, BeautyBot bot) throws SQLException {
+     void processCallback(long chatId, String callback, BeautyBot bot) throws SQLException {
         String newText = "";
         List<Button> buttons = new ArrayList<>();
+        String component="";
+        if (callback.split(":")[0].equals("Detailed")) {
+            component = callback.split(":")[1];
+            callback="Detailed";
+        }
         switch (callback) {
             case "I_can":
                 newText = "1. Я смогу помочь тебе выбрать подходящее уходовое средство, проанализировав состав продукта. Также я расскажу всю необходимую информацию об активных компонентах, и ,кроме того, предупрежу об опасностях для твоей кожи, скрывающихся в составе.\n2. Еще я смогу ответить на твои вопросы об отдельных активных веществах: объясню для чего они применяются, как они влияют на твою кожу, в чем принцип их работы.\nКак работает анализ состава?\nДля того, чтобы познакомится с составом поближе тебе необходимо:\n• Найти состав продукта в текстовом варианте (обязательно на английском!), в этом тебе может помочь любой онлайн магазин, где твое средство есть в наличии. В описании товара и должен быть состав.\n• Отправить состав мне в сообщении.\n• Любоваться результатом!\nКак узнать подробную информацию о компоненте?\nДля того, чтобы подробнее узнать о компоненте тебе необходимо:\n• Отправить мне сообщение, где будет название компонента (обязательно на английском!)\n• Любоваться результатом!\nЧем займемся?";
@@ -100,18 +96,32 @@ public class Logic {
                 bot.setState(State.INGREDIENT);
                 newText = "Введите название актива";
                 break;
-            default:
-                if (callback.split(":")[0].equals("Detailed")) {
-                    bot.setState(State.MORE);
-                    String component = callback.split(":")[1];
-                    newText = bot.getComponentBase().getDetailInfFromComponent(component);
-                }
+            case"Detailed":
+                newText = bot.getComponentBase().getDetailInfFromComponent(component);
+                newText+="\nХотите ли узнать подробнее о другом компоненте?";
+                Button newButtonYes = new Button("Да", "Yes");
+                Button newButtonNo = new Button("Нет", "No");
+                buttons.add(newButtonYes);
+                buttons.add(newButtonNo);
                 break;
-
+            case "Yes":
+                newText= allComponentsMessage.getText();
+                buttons=allComponentsMessage.getButtons();
+                break;
+            case "No":
+                newText = "Чем займемся дальше?";
+                Button newButton11 = new Button("Анализ состава", "Structure");
+                Button newButton22 = new Button("Информация о компоненте", "Component");
+                buttons.add(newButton11);
+                buttons.add(newButton22);
+                break;
         }
         Message answ = new Message(newText, buttons);
         bot.send(chatId, answ);
+
     }
+
+
 
 
 }
