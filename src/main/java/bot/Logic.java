@@ -1,67 +1,35 @@
 package bot;
 
-import kotlin.io.encoding.Base64;
+import kotlin.collections.ArrayDeque;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Queue;
-
 
 public class Logic {
     void processMessage(long chatId, Message message, BeautyBot bot, String userName) {
         String newText = "";
-        int countComponents = 0;
-        Message allComponentsMessage = null;
-
         List<Button> buttons = new ArrayList<>();
-        if (bot.getState() == State.INGREDIENT) {
+        if (bot.getUser().getState() == State.INGREDIENT) {
             try {
-                String text = bot.getComponentBase().getInfFromComponent(message.getText());
+                String text = bot.getComponentBase().getInfFromComponent(message.getText(),"components");
                 if (Objects.equals(text, "")) {
                     text = "нет такого компонента:(";
                 }
-                newText = text;
+                newText=text;
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
-            bot.setState(State.DEFAULT);
-        } else if (bot.getState() == State.ALL) {
-            try {
-                String textFromMassage = message.getText();
-                String[] componentsList = Shape.messageParser(textFromMassage);
-                StringBuilder text = new StringBuilder();
-                for (String component : componentsList) {
-                    String detailInf = bot.getComponentBase().getInfFromComponent(component);
-                    if (detailInf.isEmpty()) {
-                        continue;
-                    } else {
-                        Button componentButton = new Button(component, "Detailed:" + component);
-                        buttons.add(componentButton);
-                        text.append(component);
-                        text.append(":\n");
-                        text.append(detailInf);
-                        text.append('\n');
-                        countComponents += 1;
-
-                    }
-                }
-                if (text.isEmpty()) {
-                    text = new StringBuilder("ни одного компонента из состава не нашлось:(");
-                }
-                newText = text.toString();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-            bot.setState(State.DEFAULT);
+            bot.getUser().updateState(State.DEFAULT);
+            updateState(bot.getUser(),bot);
+            //todo появляются ещё две кнопки 1) узнать про другой компонент 2)проанализировать состав 3)завершить работу?
 
         }
-        else if(bot.getState() == State.MORE){
-            System.out.println("more");
-            //todo возможность еще раз тыкать на кнопочки с компонентами
-        }
-
         switch (message.getText()) {
             case "/start":
                 newText = "Привет," + userName + " меня зовут SkinHelper! Я помогу тебе разобраться в уходе за кожей лица.\nСо мной ты поймешь какие компоненты в косметике подойдут именно тебе!";
@@ -81,7 +49,7 @@ public class Logic {
         bot.send(chatId, answer);
     }
 
-    void processCallback(long chatId, String callback, BeautyBot bot) throws SQLException {
+    void processCallback(long chatId, String callback, BeautyBot bot) {
         String newText = "";
         List<Button> buttons = new ArrayList<>();
         switch (callback) {
@@ -93,26 +61,34 @@ public class Logic {
                 buttons.add(newButton2);
                 break;
             case "Structure":
-                bot.setState(State.ALL);
+                bot.getUser().updateState(State.ALL);
+                updateState(bot.getUser(),bot);
                 newText = "Введите состав вашего продукта!";
                 break;
             case "Component":
-                bot.setState(State.INGREDIENT);
+                bot.getUser().updateState(State.INGREDIENT);
+                updateState(bot.getUser(),bot);
                 newText = "Введите название актива";
-                break;
-            default:
-                if (callback.split(":")[0].equals("Detailed")) {
-                    bot.setState(State.MORE);
-                    String component = callback.split(":")[1];
-                    newText = bot.getComponentBase().getDetailInfFromComponent(component);
-                }
-                break;
-
         }
         Message answ = new Message(newText, buttons);
         bot.send(chatId, answ);
+
     }
-
-
+    public void processState(long chatId,BeautyBot bot,String userName) throws SQLException {
+        String currentState = bot.getComponentBase().getState(chatId, "users");
+        if (currentState.isEmpty()) {
+            System.out.println("new user");
+            bot.getComponentBase().addUser("users", chatId,State.DEFAULT);
+            currentState = "DEFAULT";
+        }
+        User newUser = new User(chatId, State.valueOf(currentState),userName);
+        bot.setUser(newUser);
+    }
+    public void updateState(User user,BeautyBot bot){
+        try {
+            bot.getComponentBase().updateState("users",user.getChatId(),user.getState());
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
-
