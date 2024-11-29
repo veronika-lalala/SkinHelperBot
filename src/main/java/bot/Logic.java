@@ -1,11 +1,5 @@
 package bot;
 
-import kotlin.collections.ArrayDeque;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,13 +12,10 @@ public class Logic {
 
     void processMessage(long chatId, Message message, BeautyBot bot, String userName) {
         String newText = "";
-        int countComponents = 0;
-        Message allComponentsMessage = null;
-
         List<Button> buttons = new ArrayList<>();
         if (bot.getUser().getState() == State.INGREDIENT) {
             try {
-                String text = bot.getComponentBase().getInfFromComponent(message.getText(),"components");
+                String text = bot.getComponentBase().getInfFromComponent(message.getText(), "components");
                 if (Objects.equals(text, "")) {
                     text = "нет такого компонента:(";
                 }
@@ -38,17 +29,16 @@ public class Logic {
                 throw new RuntimeException(e);
             }
             bot.getUser().updateState(State.DEFAULT);
-            updateState(bot.getUser(),bot);
+            updateState(bot.getUser(), bot);
             //todo появляются ещё две кнопки 1) узнать про другой компонент 2)проанализировать состав 3)завершить работу?
-            bot.setState(State.DEFAULT);
         }
-        if (bot.getState() == State.ALL) {
+        if (bot.getUser().getState() == State.ALL) {
             try {
                 String textFromMassage = message.getText();
                 String[] componentsList = Shape.messageParser(textFromMassage);
                 StringBuilder text = new StringBuilder();
                 for (String component : componentsList) {
-                    String detailInf = bot.getComponentBase().getInfFromComponent(component);
+                    String detailInf = bot.getComponentBase().getInfFromComponent(component,"components");
                     if (detailInf.isEmpty()) {
                         continue;
                     } else {
@@ -73,7 +63,6 @@ public class Logic {
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
-            bot.setState(State.DEFAULT);
 
 
         }
@@ -115,16 +104,16 @@ public class Logic {
                 break;
             case "Structure":
                 bot.getUser().updateState(State.ALL);
-                updateState(bot.getUser(),bot);
+                updateState(bot.getUser(), bot);
                 newText = "Введите состав вашего продукта!";
                 break;
             case "Component":
                 bot.getUser().updateState(State.INGREDIENT);
-                updateState(bot.getUser(),bot);
+                updateState(bot.getUser(), bot);
                 newText = "Введите название актива";
                 break;
             case "Detailed":
-                newText = bot.getComponentBase().getDetailInfFromComponent(component);
+                newText = bot.getComponentBase().getDetailInfFromComponent(component,"components");
                 newText += "\nХотите ли узнать подробнее о другом компоненте?";
                 Button newButtonYes = new Button("Да", "Yes");
                 Button newButtonNo = new Button("Нет", "No");
@@ -155,20 +144,20 @@ public class Logic {
     }
 
 
-    }
-    public void processState(long chatId,BeautyBot bot,String userName) throws SQLException {
+    public void processState(long chatId, BeautyBot bot, String userName) throws SQLException {
         String currentState = bot.getComponentBase().getState(chatId, "users");
         if (currentState.isEmpty()) {
             System.out.println("new user");
-            bot.getComponentBase().addUser("users", chatId,State.DEFAULT);
+            bot.getComponentBase().addUser("users", chatId, State.DEFAULT);
             currentState = "DEFAULT";
         }
-        User newUser = new User(chatId, State.valueOf(currentState),userName);
+        User newUser = new User(chatId, State.valueOf(currentState), userName);
         bot.setUser(newUser);
     }
-    public void updateState(User user,BeautyBot bot){
+
+    public void updateState(User user, BeautyBot bot) {
         try {
-            bot.getComponentBase().updateState("users",user.getChatId(),user.getState());
+            bot.getComponentBase().updateState("users", user.getChatId(), user.getState());
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
