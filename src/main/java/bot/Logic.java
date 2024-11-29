@@ -8,6 +8,8 @@ import java.util.Objects;
 
 public class Logic {
     private Message allComponentsMessage;
+    private List<Button> buttonsComponents = new ArrayList<>();
+
     void processMessage(long chatId, Message message, BeautyBot bot, String userName) {
         String newText = "";
         List<Button> buttons = new ArrayList<>();
@@ -18,6 +20,11 @@ public class Logic {
                     text = "нет такого компонента:(";
                 }
                 newText = text;
+                newText += "\nХотите ли узнать информацию о другом компоненте?";
+                Button yComponent = new Button("Да", "Component");
+                Button nComponent = new Button("Нет", "No");
+                buttons.add(yComponent);
+                buttons.add(nComponent);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -34,22 +41,28 @@ public class Logic {
                         continue;
                     } else {
                         Button componentButton = new Button(component, "Detailed:" + component);
-                        buttons.add(componentButton);
+                        buttonsComponents.add(componentButton);
                         text.append(component);
                         text.append(":\n");
                         text.append(detailInf);
                         text.append('\n');
+
                     }
                 }
+                text.append("Хотите ли узнать подробнее о каком-то из компонентов?");
                 if (text.isEmpty()) {
                     text = new StringBuilder("ни одного компонента из состава не нашлось:(");
                 }
                 newText = text.toString();
+                Button detailQuestion1 = new Button("Да", "YesDetail");
+                Button detailQuestion2 = new Button("Нет", "No");
+                buttons.add(detailQuestion1);
+                buttons.add(detailQuestion2);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
             bot.setState(State.DEFAULT);
-            allComponentsMessage=new Message("Выберите еще компонент\n",buttons);
+
 
         }
 
@@ -72,13 +85,13 @@ public class Logic {
         bot.send(chatId, answer);
     }
 
-     void processCallback(long chatId, String callback, BeautyBot bot) throws SQLException {
+    void processCallback(long chatId, String callback, BeautyBot bot) throws SQLException {
         String newText = "";
         List<Button> buttons = new ArrayList<>();
-        String component="";
+        String component = "";
         if (callback.split(":")[0].equals("Detailed")) {
             component = callback.split(":")[1];
-            callback="Detailed";
+            callback = "Detailed";
         }
         switch (callback) {
             case "I_can":
@@ -96,19 +109,26 @@ public class Logic {
                 bot.setState(State.INGREDIENT);
                 newText = "Введите название актива";
                 break;
-            case"Detailed":
+            case "Detailed":
                 newText = bot.getComponentBase().getDetailInfFromComponent(component);
-                newText+="\nХотите ли узнать подробнее о другом компоненте?";
+                newText += "\nХотите ли узнать подробнее о другом компоненте?";
                 Button newButtonYes = new Button("Да", "Yes");
                 Button newButtonNo = new Button("Нет", "No");
                 buttons.add(newButtonYes);
                 buttons.add(newButtonNo);
                 break;
             case "Yes":
-                newText= allComponentsMessage.getText();
-                buttons=allComponentsMessage.getButtons();
+
+                allComponentsMessage = new Message("Выберите еще компонент\n", buttonsComponents);
+                newText = allComponentsMessage.getText();
+                buttons = allComponentsMessage.getButtons();
+                break;
+            case "YesDetail":
+                newText = "Выберите компонент о котором хотите узнать подробнее";
+                buttons = buttonsComponents;
                 break;
             case "No":
+                buttonsComponents.clear();
                 newText = "Чем займемся дальше?";
                 Button newButton11 = new Button("Анализ состава", "Structure");
                 Button newButton22 = new Button("Информация о компоненте", "Component");
@@ -120,8 +140,6 @@ public class Logic {
         bot.send(chatId, answ);
 
     }
-
-
 
 
 }
