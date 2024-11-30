@@ -30,7 +30,6 @@ public class Logic {
             }
             bot.getUser().updateState(State.DEFAULT);
             updateState(bot.getUser(), bot);
-            //todo появляются ещё две кнопки 1) узнать про другой компонент 2)проанализировать состав 3)завершить работу?
         }
         if (bot.getUser().getState() == State.ALL) {
             try {
@@ -121,15 +120,23 @@ public class Logic {
                 buttons.add(newButtonNo);
                 break;
             case "Yes":
-
-                allComponentsMessage = new Message("Выберите еще компонент\n", buttonsComponents);
-                newText = allComponentsMessage.getText();
-                buttons = allComponentsMessage.getButtons();
+                if (buttonsComponents.isEmpty()){
+                    newText="Для начла введите интересующий вас состав";
+                    buttons.add(new Button("Анализ состава", "Structure"));
+                }else {
+                    newText = "Выберите еще компонент\n";
+                    buttons = buttonsComponents;
+                }
                 break;
             case "YesDetail":
-                newText = "Выберите компонент о котором хотите узнать подробнее";
-                buttons = buttonsComponents;
-                break;
+                if (buttonsComponents.isEmpty()){
+                    newText="Для начла введите интересующий вас состав";
+                    buttons.add(new Button("Анализ состава", "Structure"));
+                }else {
+                    newText = "Выберите компонент о котором хотите узнать подробнее";
+                    buttons = buttonsComponents;
+                    break;
+                }
             case "No":
                 buttonsComponents.clear();
                 newText = "Чем займемся дальше?";
@@ -151,6 +158,7 @@ public class Logic {
             bot.getComponentBase().addUser("users", chatId, State.DEFAULT);
             currentState = "DEFAULT";
         }
+        System.out.println(currentState);
         User newUser = new User(chatId, State.valueOf(currentState), userName);
         bot.setUser(newUser);
     }

@@ -25,7 +25,7 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
     private final TelegramClient telegramClient;
     private final Logic logic;
     private User user;
-    private final WorkWithSQL componentBase = new WorkWithSQL("jdbc:mysql://localhost:3306/mydbtest", "root", "goddeskarina291005", "components");
+    private final WorkWithSQL componentBase = new WorkWithSQL("jdbc:mysql://localhost:3306/bdinfcomp", "root", "qwer", "components");
 
     //"jdbc:mysql://localhost:3306/bdinfcomp", "root", "qwer", "components"
     public BeautyBot(String botToken) throws SQLException {
@@ -74,6 +74,13 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
             logic.processMessage(chat_id, mes, this, userName);//передали логике сообщение которое получили должна сделать всё и отправить сообщение там будут все ифы и проверки для сообщения
         } else if (update.hasCallbackQuery()) {
             long chat_id_callback = update.getCallbackQuery().getMessage().getChatId();
+            if(this.user==null){
+                try {
+                    logic.processState(chat_id_callback, this, update.getCallbackQuery().getMessage().getChat().getFirstName());
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
             String calldata = update.getCallbackQuery().getData();
             try {
                 logic.processCallback(chat_id_callback, calldata, this);
