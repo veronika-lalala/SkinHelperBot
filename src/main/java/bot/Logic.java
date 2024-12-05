@@ -17,7 +17,7 @@ public class Logic {
             try {
                 String text = bot.getComponentBase().getInfFromComponent(message.getText(), "components");
                 if (Objects.equals(text, "")) {
-                    text = "нет такого компонента:(";
+                    text = "Данный компонент пока отсутствует в моей базе, но я работаю над этим!";
                 }
                 newText = text;
                 newText += "\nХотите ли узнать информацию о другом компоненте?";
@@ -36,30 +36,45 @@ public class Logic {
             try {
                 String textFromMassage = message.getText();
                 String[] componentsList = Shape.messageParser(textFromMassage);
-                StringBuilder text = new StringBuilder();
+                StringBuilder textGoodComponents = new StringBuilder();
+                StringBuilder textComedogenic = new StringBuilder();
                 for (String component : componentsList) {
-                    String detailInf = bot.getComponentBase().getInfFromComponent(component,"components");
-                    if (detailInf.isEmpty()) {
+                    String inf = bot.getComponentBase().getInfFromComponent(component,"components");
+                    if(inf==null){
+                        component = component.toUpperCase();
+                        textComedogenic.append("В составе этого продукта были найдены комедогенные компоненты!\n");
+                        textComedogenic.append(component);
+                        textComedogenic.append('\n');
+                    }
+                    else if(inf.isEmpty()) {
                         continue;
-                    } else {
+                    }
+                    else {
+                        component = component.toUpperCase();
                         Button componentButton = new Button(component, "Detailed:" + component);
                         buttonsComponents.add(componentButton);
-                        text.append(component);
-                        text.append(":\n");
-                        text.append(detailInf);
-                        text.append('\n');
+                        textGoodComponents.append(component);
+                        textGoodComponents.append(":\n");
+                        textGoodComponents.append(inf);
+                        textGoodComponents.append('\n');
 
                     }
                 }
-                text.append("Хотите ли узнать подробнее о каком-то из компонентов?");
-                if (text.isEmpty()) {
-                    text = new StringBuilder("ни одного компонента из состава не нашлось:(");
+                if (textGoodComponents.isEmpty()) {
+                    textGoodComponents = new StringBuilder("Ни одного компонента из состава не нашлось в моей базе, но я работаю над этим!\n");
+                    newText = textGoodComponents.toString();
+                    Button proceed=new Button("Продолжить","No");
+                    buttons.add(proceed);
                 }
-                newText = text.toString();
-                Button detailQuestion1 = new Button("Да", "YesDetail");
-                Button detailQuestion2 = new Button("Нет", "No");
-                buttons.add(detailQuestion1);
-                buttons.add(detailQuestion2);
+                else {
+                    textGoodComponents.append(textComedogenic);
+                    textGoodComponents.append("Хотите ли узнать подробнее о каком-то из компонентов?");
+                    newText = textGoodComponents.toString();
+                    Button detailQuestion1 = new Button("Да", "YesDetail");
+                    Button detailQuestion2 = new Button("Нет", "No");
+                    buttons.add(detailQuestion1);
+                    buttons.add(detailQuestion2);
+                }
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -110,7 +125,7 @@ public class Logic {
             case "Component":
                 bot.getUser().updateState(State.INGREDIENT);
                 updateState(bot.getUser(), bot);
-                newText = "Введите название актива";
+                newText = "Введите название актива!";
                 break;
             case "Detailed":
                 newText = bot.getComponentBase().getDetailInfFromComponent(component,"components");
@@ -121,7 +136,6 @@ public class Logic {
                 buttons.add(newButtonNo);
                 break;
             case "Yes":
-
                 allComponentsMessage = new Message("Выберите еще компонент\n", buttonsComponents);
                 newText = allComponentsMessage.getText();
                 buttons = allComponentsMessage.getButtons();
