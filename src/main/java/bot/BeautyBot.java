@@ -32,12 +32,7 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
         this.telegramClient = new OkHttpTelegramClient(botToken);
         this.logic = new Logic();
         this.user = null;
-        //componentBase.addUser("users",ch,"jk");
-//        for (State value : State.values()) {
-//            if (value.name() == user.state) {
-//                this.state = value;
-//            }
-//        }
+
     }
 
     public WorkWithSQL getComponentBase() {
@@ -52,34 +47,29 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
         return user;
     }
 
-
-    public void setButtons(SendMessage sendMessage) {
-        sendMessage.setReplyMarkup(ReplyKeyboardMarkup.builder().keyboardRow(new KeyboardRow(new String[]{"Помощь"})).keyboardRow(new KeyboardRow(new String[]{"Вернуться в начало"})).build());
-    }
-
     @Override
     public void consume(Update update) {
 
         if (update.hasMessage() && update.getMessage().hasText()) {
-            long chat_id = update.getMessage().getChatId();
-            String userName = update.getMessage().getChat().getFirstName();
-            if(user==null){
-                //long chat_id = update.getMessage().getChatId();
-                //String userName = update.getMessage().getChat().getFirstName();
+//            long chat_id = update.getMessage().getChatId();
+//            String userName = update.getMessage().getChat().getFirstName();
+            if (user == null) {
+                long chat_id = update.getMessage().getChatId();
+                String userName = update.getMessage().getChat().getFirstName();
                 try {
                     logic.processState(chat_id, this, userName);
                 } catch (SQLException e) {
                     throw new RuntimeException(e);
                 }
             }
-            System.out.println(user.getChatId());
+
             String message_text = update.getMessage().getText();
             Message mes = new Message(message_text, null);
 
-            logic.processMessage(chat_id, mes, this, userName);//передали логике сообщение которое получили должна сделать всё и отправить сообщение там будут все ифы и проверки для сообщения
+            logic.processMessage(mes, this);//передали логике сообщение которое получили должна сделать всё и отправить сообщение там будут все ифы и проверки для сообщения
         } else if (update.hasCallbackQuery()) {
             long chat_id_callback = update.getCallbackQuery().getMessage().getChatId();
-            if(this.user==null){
+            if (this.user == null) {
                 try {
                     logic.processState(chat_id_callback, this, update.getCallbackQuery().getMessage().getChat().getFirstName());
                 } catch (SQLException e) {
@@ -96,19 +86,18 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
     }
 
 
-
-    public void send(long chatId, Message message) {
+    public void send(Message message) {
+        System.out.println(getUser().getState());
         SendMessage sendMessage = SendMessage
                 .builder()
                 .text(message.getText())
-                .chatId(chatId)
+                .chatId(getUser().getChatId())
                 .build();
         if (message.getButtons() != null) {
-            if(message.getButtons().getFirst().getCallback()!=null) {
+            if (message.getButtons().getFirst().getCallback() != null) {
                 messageButtons(sendMessage, message.getButtons());
-            }
-            else{
-                keyboardButtons(sendMessage,message.getButtons());
+            } else {
+                keyboardButtons(sendMessage, message.getButtons());
             }
         }
         try {
@@ -121,28 +110,17 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
 
     }
 
-    private void keyboardButtons(SendMessage sendMessage,List<Button> buttons){
-        //sendMessage.setReplyMarkup(ReplyKeyboardMarkup.builder().keyboardRow(new KeyboardRow(new String[]{"Помощь"})).keyboardRow(new KeyboardRow(new String[]{"Вернуться в начало"})).build());
-//         List<KeyboardRow> rows= new ArrayList<KeyboardRow>();
-//
-//        for (Button button:buttons){
-//            rows.add(new KeyboardRow(button.getName()));
-//        }
-//        sendMessage.setReplyMarkup(ReplyKeyboardMarkup.builder().keyboardRow(rows).build());
+    private void keyboardButtons(SendMessage sendMessage, List<Button> buttons) {
         List<KeyboardRow> rows = new ArrayList<>();
-
-
         for (Button button : buttons) {
-            KeyboardRow row = new KeyboardRow(); // Создаем новую строку для каждой кнопки
-            row.add(button.getName()); // Добавляем имя кнопки в строку
-            rows.add(row); // Добавляем строку в список строк
+            KeyboardRow row = new KeyboardRow();
+            row.add(button.getName());
+            rows.add(row);
         }
-
-        // Устанавливаем разметку клавиатуры
         sendMessage.setReplyMarkup(ReplyKeyboardMarkup.builder().keyboard(rows).build());
     }
 
-    public void messageButtons(SendMessage sendMessage, List<Button> buttons) {
+    private void messageButtons(SendMessage sendMessage, List<Button> buttons) {
         List<InlineKeyboardRow> rows = new ArrayList<>();
         InlineKeyboardRow currentRow = new InlineKeyboardRow();
 
