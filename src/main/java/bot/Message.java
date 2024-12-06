@@ -2,7 +2,7 @@ package bot;
 
 import java.util.List;
 
-public class Message {//record
+public class Message {
     String text;
     List<Button> buttons = null;
 

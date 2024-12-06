@@ -25,19 +25,14 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
     private final TelegramClient telegramClient;
     private final Logic logic;
     private User user;
-    private final WorkWithSQL componentBase = new WorkWithSQL("jdbc:mysql://localhost:3306/mydbtest", "root", "goddeskarina291005", "components");
+    private final WorkWithSQL componentBase = new WorkWithSQL("jdbc:mysql://localhost:3306/bdinfcomp", "root", "qwer", "components");
 
     //"jdbc:mysql://localhost:3306/bdinfcomp", "root", "qwer", "components"
     public BeautyBot(String botToken) throws SQLException {
         this.telegramClient = new OkHttpTelegramClient(botToken);
         this.logic = new Logic();
         this.user = null;
-        //componentBase.addUser("users",ch,"jk");
-//        for (State value : State.values()) {
-//            if (value.name() == user.state) {
-//                this.state = value;
-//            }
-//        }
+
     }
 
     public WorkWithSQL getComponentBase() {
@@ -52,28 +47,35 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
         return user;
     }
 
-
-    public void setButtons(SendMessage sendMessage) {
-        sendMessage.setReplyMarkup(ReplyKeyboardMarkup.builder().keyboardRow(new KeyboardRow(new String[]{"Помощь"})).keyboardRow(new KeyboardRow(new String[]{"Вернуться в начало"})).build());
-    }
-
     @Override
     public void consume(Update update) {
 
         if (update.hasMessage() && update.getMessage().hasText()) {
-            long chat_id = update.getMessage().getChatId();
-            String userName = update.getMessage().getChat().getFirstName();
-            try {
-                logic.processState(chat_id, this, userName);
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
+//            long chat_id = update.getMessage().getChatId();
+//            String userName = update.getMessage().getChat().getFirstName();
+            if (user == null) {
+                long chat_id = update.getMessage().getChatId();
+                String userName = update.getMessage().getChat().getFirstName();
+                try {
+                    logic.processState(chat_id, this, userName);
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
             }
+
             String message_text = update.getMessage().getText();
             Message mes = new Message(message_text, null);
 
-            logic.processMessage(chat_id, mes, this, userName);//передали логике сообщение которое получили должна сделать всё и отправить сообщение там будут все ифы и проверки для сообщения
+            logic.processMessage(mes, this);//передали логике сообщение которое получили должна сделать всё и отправить сообщение там будут все ифы и проверки для сообщения
         } else if (update.hasCallbackQuery()) {
             long chat_id_callback = update.getCallbackQuery().getMessage().getChatId();
+            if (this.user == null) {
+                try {
+                    logic.processState(chat_id_callback, this, update.getCallbackQuery().getMessage().getChat().getFirstName());
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
             String calldata = update.getCallbackQuery().getData();
             try {
                 logic.processCallback(chat_id_callback, calldata, this);
@@ -83,20 +85,20 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
         }
     }
 
-    //todo впихнуть создание меню, лучше вызывать когда просим ввести компонент и нет других кнопок
-    private SendMessage newMessage(String new_text, long id) {
-        SendMessage newMessage = SendMessage.builder().chatId(id).text(new_text).build();
-        return newMessage;
-    }
 
-    public void send(long chatId, Message message) {
+    public void send(Message message) {
+        System.out.println(getUser().getState());
         SendMessage sendMessage = SendMessage
                 .builder()
                 .text(message.getText())
-                .chatId(chatId)
+                .chatId(getUser().getChatId())
                 .build();
         if (message.getButtons() != null) {
-            messageButtons(sendMessage, message.getButtons());
+            if (message.getButtons().getFirst().getCallback() != null) {
+                messageButtons(sendMessage, message.getButtons());
+            } else {
+                keyboardButtons(sendMessage, message.getButtons());
+            }
         }
         try {
             this.telegramClient.execute(sendMessage);
@@ -108,7 +110,17 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
 
     }
 
-    public void messageButtons(SendMessage sendMessage, List<Button> buttons) {
+    private void keyboardButtons(SendMessage sendMessage, List<Button> buttons) {
+        List<KeyboardRow> rows = new ArrayList<>();
+        for (Button button : buttons) {
+            KeyboardRow row = new KeyboardRow();
+            row.add(button.getName());
+            rows.add(row);
+        }
+        sendMessage.setReplyMarkup(ReplyKeyboardMarkup.builder().keyboard(rows).build());
+    }
+
+    private void messageButtons(SendMessage sendMessage, List<Button> buttons) {
         List<InlineKeyboardRow> rows = new ArrayList<>();
         InlineKeyboardRow currentRow = new InlineKeyboardRow();
 
