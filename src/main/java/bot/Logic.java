@@ -9,6 +9,7 @@ import java.util.Objects;
 public class Logic {
     private Message allComponentsMessage;
     private List<Button> buttonsComponents = new ArrayList<>();
+
     void processMessage(Message message, BeautyBot bot) {
         String newText = "";
         List<Button> buttons = new ArrayList<>();
@@ -47,7 +48,7 @@ public class Logic {
             try {
                 String text = bot.getComponentBase().getInfFromComponent(message.getText(), "components");
                 if (Objects.equals(text, "")) {
-                    text = "нет такого компонента:(";
+                    text = "Данный компонент пока отсутствует в моей базе, но я работаю над этим!";
                 }
                 newText = text;
                 newText += "\nХотите ли узнать информацию о другом компоненте?";
@@ -60,35 +61,51 @@ public class Logic {
             }
             bot.getUser().updateState(State.DEFAULT);
             updateState(bot.getUser(), bot);
+            //todo появляются ещё две кнопки 1) узнать про другой компонент 2)проанализировать состав 3)завершить работу?
         }
         if (bot.getUser().getState() == State.ALL) {
             try {
                 String textFromMassage = message.getText();
                 String[] componentsList = Shape.messageParser(textFromMassage);
-                StringBuilder text = new StringBuilder();
+                StringBuilder textGoodComponents = new StringBuilder();
+                StringBuilder textComedogenic = new StringBuilder();
                 for (String component : componentsList) {
-                    String detailInf = bot.getComponentBase().getInfFromComponent(component, "components");
-                    if (detailInf.isEmpty()) {
+                    String inf = bot.getComponentBase().getInfFromComponent(component,"components");
+                    if(inf==null){
+                        component = component.toUpperCase();
+                        textComedogenic.append("В составе этого продукта были найдены комедогенные компоненты!\n");
+                        textComedogenic.append(component);
+                        textComedogenic.append('\n');
+                    }
+                    else if(inf.isEmpty()) {
                         continue;
-                    } else {
+                    }
+                    else {
+                        component = component.toUpperCase();
                         Button componentButton = new Button(component, "Detailed:" + component);
                         buttonsComponents.add(componentButton);
-                        text.append(component);
-                        text.append(":\n");
-                        text.append(detailInf);
-                        text.append('\n');
+                        textGoodComponents.append(component);
+                        textGoodComponents.append(":\n");
+                        textGoodComponents.append(inf);
+                        textGoodComponents.append('\n');
 
                     }
                 }
-                text.append("Хотите ли узнать подробнее о каком-то из компонентов?");
-                if (text.isEmpty()) {
-                    text = new StringBuilder("ни одного компонента из состава не нашлось:(");
+                if (textGoodComponents.isEmpty()) {
+                    textGoodComponents = new StringBuilder("Ни одного компонента из состава не нашлось в моей базе, но я работаю над этим!\n");
+                    newText = textGoodComponents.toString();
+                    Button proceed=new Button("Продолжить","No");
+                    buttons.add(proceed);
                 }
-                newText = text.toString();
-                Button detailQuestion1 = new Button("Да", "YesDetail");
-                Button detailQuestion2 = new Button("Нет", "No");
-                buttons.add(detailQuestion1);
-                buttons.add(detailQuestion2);
+                else {
+                    textGoodComponents.append(textComedogenic);
+                    textGoodComponents.append("Хотите ли узнать подробнее о каком-то из компонентов?");
+                    newText = textGoodComponents.toString();
+                    Button detailQuestion1 = new Button("Да", "YesDetail");
+                    Button detailQuestion2 = new Button("Нет", "No");
+                    buttons.add(detailQuestion1);
+                    buttons.add(detailQuestion2);
+                }
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -183,7 +200,6 @@ public class Logic {
     public void processState(long chatId, BeautyBot bot, String userName) throws SQLException {//вызовется один раз когда пользователь только подключился
         String currentState = bot.getComponentBase().getState(chatId, "users");
         if (currentState.isEmpty()) {
-            System.out.println("new user");
             bot.getComponentBase().addUser("users", chatId, State.DEFAULT);
             currentState = "DEFAULT";
         }
