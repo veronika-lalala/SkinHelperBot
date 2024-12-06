@@ -25,7 +25,7 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
     private final TelegramClient telegramClient;
     private final Logic logic;
     private User user;
-    private final WorkWithSQL componentBase = new WorkWithSQL("jdbc:mysql://localhost:3306/bdinfcomp", "root", "qwer", "components");
+    private final WorkWithSQL componentBase = new WorkWithSQL("jdbc:mysql://localhost:3306/mydbtest", "root", "goddeskarina291005", "components");
 
     //"jdbc:mysql://localhost:3306/bdinfcomp", "root", "qwer", "components"
     public BeautyBot(String botToken) throws SQLException {
@@ -87,7 +87,6 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
 
 
     public void send(Message message) {
-        System.out.println(getUser().getState());
         SendMessage sendMessage = SendMessage
                 .builder()
                 .text(message.getText())

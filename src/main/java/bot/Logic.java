@@ -10,7 +10,7 @@ public class Logic {
     private Message allComponentsMessage;
     private List<Button> buttonsComponents = new ArrayList<>();
 
-    void processMessage(long chatId, Message message, BeautyBot bot, String userName) {
+    void processMessage(Message message, BeautyBot bot) {
         String newText = "";
         List<Button> buttons = new ArrayList<>();
         switch (message.getText()) {
@@ -150,7 +150,6 @@ public class Logic {
                 Button ButReply2 = new Button("Вернуться в начало", null);
                 buttons.add(ButReply1);
                 buttons.add(ButReply2);
-                newText = "Введите название актива!";
                 break;
             case "Detailed":
                 newText = bot.getComponentBase().getDetailInfFromComponent(component, "components");
@@ -201,7 +200,6 @@ public class Logic {
     public void processState(long chatId, BeautyBot bot, String userName) throws SQLException {//вызовется один раз когда пользователь только подключился
         String currentState = bot.getComponentBase().getState(chatId, "users");
         if (currentState.isEmpty()) {
-            System.out.println("new user");
             bot.getComponentBase().addUser("users", chatId, State.DEFAULT);
             currentState = "DEFAULT";
         }
