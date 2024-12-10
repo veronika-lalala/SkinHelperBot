@@ -1,4 +1,6 @@
-package bot;
+package database;
+
+import userstate.State;
 
 import java.sql.*;
 
@@ -63,7 +65,7 @@ public class WorkWithSQL {
         return result;
     }
 
-    public void addUser(String table,long chatId,State state) throws SQLException {
+    public void addUser(String table, long chatId, State state) throws SQLException {
         String sql = "INSERT INTO " + table + " (idchat,state) VALUES (?,?)";
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setLong(1, chatId);

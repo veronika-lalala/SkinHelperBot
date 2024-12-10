@@ -1,4 +1,4 @@
-package bot;
+package userstate;
 
 public enum State {
     DEFAULT,

@@ -1,4 +1,4 @@
-package bot;
+package userstate;
 
 public class User {
     long chatId;

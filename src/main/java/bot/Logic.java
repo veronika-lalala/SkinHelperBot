@@ -1,5 +1,9 @@
 package bot;
 
+import userstate.State;
+import userstate.User;
+import utils.Utils;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,8 +11,16 @@ import java.util.Objects;
 
 
 public class Logic {
-    private Message allComponentsMessage;
+
+    public final static String COMPONENT = "Component";
+    public final static String I_CAN = "I_can";
+    public final static String STRUCTURE = "Structure";
+    public final static String DETAILED = "Detailed";
+    public final static String YES = "Yes";
+    public final static String NO = "No";
+    public final static String YES_DETAIL = "YesDetail";
     private List<Button> buttonsComponents = new ArrayList<>();
+    //private Map<Long,List<Button>> buttonsComponents = new HashMap<>();
 
     void processMessage(Message message, BeautyBot bot) {
         String newText = "";
@@ -16,7 +28,7 @@ public class Logic {
         switch (message.getText()) {
             case "/start":
                 newText = "Привет," + bot.getUser().getUserName() + " меня зовут SkinHelper! Я помогу тебе разобраться в уходе за кожей лица.\nСо мной ты поймешь какие компоненты в косметике подойдут именно тебе!";
-                Button newButton = new Button("Что я умею?", "I_can");
+                Button newButton = new Button("Что я умею?", I_CAN);
                 buttons.add(newButton);
                 if (bot.getUser().getState() != State.DEFAULT) {
                     bot.getUser().updateState(State.DEFAULT);
@@ -35,8 +47,8 @@ public class Logic {
                 bot.getUser().updateState(State.DEFAULT);
                 updateState(bot.getUser(), bot);
                 newText = "1. Я смогу помочь тебе выбрать подходящее уходовое средство, проанализировав состав продукта. Также я расскажу всю необходимую информацию об активных компонентах, и ,кроме того, предупрежу об опасностях для твоей кожи, скрывающихся в составе.\n2. Еще я смогу ответить на твои вопросы об отдельных активных веществах: объясню для чего они применяются, как они влияют на твою кожу, в чем принцип их работы.";
-                Button newButton1 = new Button("Анализ состава", "Structure");
-                Button newButton2 = new Button("Информация о компоненте", "Component");
+                Button newButton1 = new Button("Анализ состава", STRUCTURE);
+                Button newButton2 = new Button("Информация о компоненте", COMPONENT);
                 buttons.add(newButton1);
                 buttons.add(newButton2);
                 Message newMes = new Message(newText, buttons);
@@ -53,8 +65,8 @@ public class Logic {
                 }
                 newText = text;
                 newText += "\nХотите ли узнать информацию о другом компоненте?";
-                Button yComponent = new Button("Да", "Component");
-                Button nComponent = new Button("Нет", "No");
+                Button yComponent = new Button("Да", COMPONENT);
+                Button nComponent = new Button("Нет", NO);
                 buttons.add(yComponent);
                 buttons.add(nComponent);
             } catch (SQLException e) {
@@ -67,43 +79,40 @@ public class Logic {
         if (bot.getUser().getState() == State.ALL) {
             try {
                 String textFromMassage = message.getText();
-                String[] componentsList = Shape.messageParser(textFromMassage);
+                String[] componentsList = Utils.messageParser(textFromMassage);
                 StringBuilder textGoodComponents = new StringBuilder();
                 StringBuilder textComedogenic = new StringBuilder();
                 for (String component : componentsList) {
-                    String inf = bot.getComponentBase().getInfFromComponent(component,"components");
-                    if(inf==null){
+                    String inf = bot.getComponentBase().getInfFromComponent(component, "components");
+                    if (inf == null) {
                         component = component.toUpperCase();
-                        textComedogenic.append("В составе этого продукта были найдены комедогенные компоненты!\n");
-                        textComedogenic.append(component);
-                        textComedogenic.append('\n');
-                    }
-                    else if(inf.isEmpty()) {
+                        textComedogenic.append("В составе этого продукта были найдены комедогенные компоненты!\nКомедогенные компоненты — это ингредиенты в косметике, которые могут способствовать образованию комедонов на коже, когда поры забиваются жиром, омертвевшими клетками и другими загрязнениями.\n");
+                        textComedogenic.append('•').append(component);
+                        textComedogenic.append("\n\n");
+                    } else if (inf.isEmpty()) {
                         continue;
-                    }
-                    else {
+                    } else {
                         component = component.toUpperCase();
                         Button componentButton = new Button(component, "Detailed:" + component);
                         buttonsComponents.add(componentButton);
-                        textGoodComponents.append(component);
+                        textGoodComponents.append('•').append(component);
                         textGoodComponents.append(":\n");
                         textGoodComponents.append(inf);
-                        textGoodComponents.append('\n');
+                        textGoodComponents.append("\n\n");
 
                     }
                 }
                 if (textGoodComponents.isEmpty()) {
                     textGoodComponents = new StringBuilder("Ни одного компонента из состава не нашлось в моей базе, но я работаю над этим!\n");
                     newText = textGoodComponents.toString();
-                    Button proceed=new Button("Продолжить","No");
+                    Button proceed = new Button("Продолжить", NO);
                     buttons.add(proceed);
-                }
-                else {
+                } else {
                     textGoodComponents.append(textComedogenic);
                     textGoodComponents.append("Хотите ли узнать подробнее о каком-то из компонентов?");
                     newText = textGoodComponents.toString();
-                    Button detailQuestion1 = new Button("Да", "YesDetail");
-                    Button detailQuestion2 = new Button("Нет", "No");
+                    Button detailQuestion1 = new Button("Да", YES_DETAIL);
+                    Button detailQuestion2 = new Button("Нет", NO);
                     buttons.add(detailQuestion1);
                     buttons.add(detailQuestion2);
                 }
@@ -124,17 +133,17 @@ public class Logic {
         String component = "";
         if (callback.split(":")[0].equals("Detailed")) {
             component = callback.split(":")[1];
-            callback = "Detailed";
+            callback = DETAILED;
         }
         switch (callback) {
-            case "I_can":
+            case I_CAN:
                 newText = "1. Я смогу помочь тебе выбрать подходящее уходовое средство, проанализировав состав продукта. Также я расскажу всю необходимую информацию об активных компонентах, и ,кроме того, предупрежу об опасностях для твоей кожи, скрывающихся в составе.\n2. Еще я смогу ответить на твои вопросы об отдельных активных веществах: объясню для чего они применяются, как они влияют на твою кожу, в чем принцип их работы.";
-                Button newButton1 = new Button("Анализ состава", "Structure");
-                Button newButton2 = new Button("Информация о компоненте", "Component");
+                Button newButton1 = new Button("Анализ состава", STRUCTURE);
+                Button newButton2 = new Button("Информация о компоненте", COMPONENT);
                 buttons.add(newButton1);
                 buttons.add(newButton2);
                 break;
-            case "Structure":
+            case STRUCTURE:
                 bot.getUser().updateState(State.ALL);
                 updateState(bot.getUser(), bot);
                 newText = "Введите состав вашего продукта!";
@@ -143,7 +152,7 @@ public class Logic {
                 buttons.add(ButReply3);
                 buttons.add(ButReply4);
                 break;
-            case "Component":
+            case COMPONENT:
                 bot.getUser().updateState(State.INGREDIENT);
                 updateState(bot.getUser(), bot);
                 newText = "Введите название актива";
@@ -152,38 +161,38 @@ public class Logic {
                 buttons.add(ButReply1);
                 buttons.add(ButReply2);
                 break;
-            case "Detailed":
+            case DETAILED:
                 newText = bot.getComponentBase().getDetailInfFromComponent(component, "components");
                 newText += "\nХотите ли узнать подробнее о другом компоненте?";
-                Button newButtonYes = new Button("Да", "Yes");
-                Button newButtonNo = new Button("Нет", "No");
+                Button newButtonYes = new Button("Да", YES);
+                Button newButtonNo = new Button("Нет", NO);
                 buttons.add(newButtonYes);
                 buttons.add(newButtonNo);
                 break;
-            case "Yes":
+            case YES:
                 if (buttonsComponents.isEmpty()) {
-                    newText = "Для начла введите интересующий вас состав";
-                    buttons.add(new Button("Анализ состава", "Structure"));
+                    newText = "Для начaла введите интересующий вас состав";
+                    buttons.add(new Button("Анализ состава", STRUCTURE));
                 } else {
                     newText = "Выберите еще компонент\n";
                     buttons = buttonsComponents;
                 }
                 break;
-            case "YesDetail":
+            case YES_DETAIL:
                 if (buttonsComponents.isEmpty()) {
                     newText = "Для начла введите интересующий вас состав";
-                    buttons.add(new Button("Анализ состава", "Structure"));
+                    buttons.add(new Button("Анализ состава", STRUCTURE));
                 } else {
                     newText = "Выберите компонент о котором хотите узнать подробнее";
                     buttons = buttonsComponents;
 
                 }
                 break;
-            case "No":
+            case NO:
                 buttonsComponents.clear();
                 newText = "Чем займемся дальше?";
-                Button newButton11 = new Button("Анализ состава", "Structure");
-                Button newButton22 = new Button("Информация о компоненте", "Component");
+                Button newButton11 = new Button("Анализ состава", STRUCTURE);
+                Button newButton22 = new Button("Информация о компоненте", COMPONENT);
                 buttons.add(newButton11);
                 buttons.add(newButton22);
                 break;
