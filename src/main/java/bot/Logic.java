@@ -60,9 +60,10 @@ public class Logic {
         if (bot.getUser().getState() == State.INGREDIENT) {
             try {
                 String text = bot.getComponentBase().getInfFromComponent(message.getText(), "components");
-                if (Objects.equals(text, "")) {
+                if (Objects.equals(text, "") | text==null) {
                     text = "Данный компонент пока отсутствует в моей базе, но я работаю над этим!";
                 }
+
                 newText = text;
                 newText += "\nХотите ли узнать информацию о другом компоненте?";
                 Button yComponent = new Button("Да", COMPONENT);
@@ -86,8 +87,8 @@ public class Logic {
                     String inf = bot.getComponentBase().getInfFromComponent(component, "components");
                     if (inf == null) {
                         component = component.toUpperCase();
-                        textComedogenic.append("В составе этого продукта были найдены комедогенные компоненты!\nКомедогенные компоненты — это ингредиенты в косметике, которые могут способствовать образованию комедонов на коже, когда поры забиваются жиром, омертвевшими клетками и другими загрязнениями.\n");
-                        textComedogenic.append('•').append(component);
+                        textComedogenic.append("В СОСТАВЕ ЭТОГО ПРОДУКТА БЫЛИ НАЙДЕНЫ КОМЕДОГЕННЫЕ КОМПОНЕНТЫ!\nКомедогенные компоненты — это ингредиенты в косметике, которые могут способствовать образованию комедонов на коже, когда поры забиваются жиром, омертвевшими клетками и другими загрязнениями.\n");
+                        textComedogenic.append('•').append(component).append("←ВОТ ЭТОТ ГАД");
                         textComedogenic.append("\n\n");
                     } else if (inf.isEmpty()) {
                         continue;
@@ -171,7 +172,7 @@ public class Logic {
                 break;
             case YES:
                 if (buttonsComponents.isEmpty()) {
-                    newText = "Для начaла введите интересующий вас состав";
+                    newText = "Для начала введите интересующий вас состав";
                     buttons.add(new Button("Анализ состава", STRUCTURE));
                 } else {
                     newText = "Выберите еще компонент\n";
@@ -180,7 +181,7 @@ public class Logic {
                 break;
             case YES_DETAIL:
                 if (buttonsComponents.isEmpty()) {
-                    newText = "Для начла введите интересующий вас состав";
+                    newText = "Для начала введите интересующий вас состав";
                     buttons.add(new Button("Анализ состава", STRUCTURE));
                 } else {
                     newText = "Выберите компонент о котором хотите узнать подробнее";
