@@ -24,7 +24,7 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
     private final TelegramClient telegramClient;
     private final Logic logic;
     private User user;
-    private final WorkWithSQL componentBase = new WorkWithSQL("jdbc:mysql://localhost:3306/mydbtest", "root", "goddeskarina291005", "components");
+    private final WorkWithSQL componentBase = new WorkWithSQL("jdbc:mysql://localhost:3306/mydbtest", "root", "goddeskarina291005");
 
     public BeautyBot(String botToken) throws SQLException {
         this.telegramClient = new OkHttpTelegramClient(botToken);

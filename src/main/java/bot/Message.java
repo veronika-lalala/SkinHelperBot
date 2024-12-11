@@ -4,7 +4,7 @@ import java.util.List;
 
 public class Message {
     String text;
-    List<Button> buttons = null;
+    List<Button> buttons;
 
     public Message(String text, List<Button> buttons) {
         this.text = text;

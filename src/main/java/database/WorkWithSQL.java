@@ -9,15 +9,12 @@ public class WorkWithSQL {
     private final String URL;
     private final String USERNAME;
     private final String PASSWORD;
-    private String TABLE;
 
-    public WorkWithSQL(String url, String username, String password, String table) throws SQLException {
+    public WorkWithSQL(String url, String username, String password) throws SQLException {
         this.URL = url;
         this.USERNAME = username;
         this.PASSWORD = password;
-        //this.TABLE = table;
         startConnection();
-        // Подключение к БД при создании объекта
     }
 
 
