@@ -10,6 +10,9 @@ import java.util.*;
 
 public class Logic {
 
+    public final static String START = "/start";
+    public final static String INSTRUCTION = "Инструкция";
+    public final static String RETURN_TO_START = "Вернуться в начало";
     public final static String COMPONENT = "Component";
     public final static String I_CAN = "I_can";
     public final static String STRUCTURE = "Structure";
@@ -17,14 +20,13 @@ public class Logic {
     public final static String YES = "Yes";
     public final static String NO = "No";
     public final static String YES_DETAIL = "YesDetail";
-    //private List<Button> buttonsComponents = new ArrayList<>();
-    private Map<Long,List<Button>> mapButtonsComponents = new HashMap<>();//когда пользователь нажимает на анализ состава заполняется, когда выходит чистится
+    private Map<Long, List<Button>> mapButtonsComponents = new HashMap<>();
 
     void processMessage(Message message, BeautyBot bot) {
         String newText = "";
         List<Button> buttons = new ArrayList<>();
         switch (message.getText()) {
-            case "/start":
+            case START:
                 newText = "Привет," + bot.getUser().getUserName() + " меня зовут SkinHelper! Я помогу тебе разобраться в уходе за кожей лица.\nСо мной ты поймешь какие компоненты в косметике подойдут именно тебе!";
                 Button newButton = new Button("Что я умею?", I_CAN);
                 buttons.add(newButton);
@@ -33,14 +35,14 @@ public class Logic {
                     updateState(bot.getUser(), bot);
                 }
                 break;
-            case "Инструкция":
+            case INSTRUCTION:
                 newText = "Как работает анализ состава?\nДля того, чтобы познакомится с составом поближе тебе необходимо:\n• Найти состав продукта в текстовом варианте (обязательно на английском!), в этом тебе может помочь любой онлайн магазин, где твое средство есть в наличии. В описании товара и должен быть состав.\n• Отправить состав мне в сообщении.\n• Любоваться результатом!\nКак узнать подробную информацию о компоненте?\nДля того, чтобы подробнее узнать о компоненте тебе необходимо:\n• Отправить мне сообщение, где будет название компонента (обязательно на английском!)\n• Любоваться результатом!";
-                Message answ = new Message(newText, null);
-                bot.send(answ);
-                Message answ2 = new Message("А теперь введите необходимую информацию!", null);
-                bot.send(answ2);
+                Message answer = new Message(newText, null);
+                bot.send(answer);
+                Message answer2 = new Message("А теперь введите необходимую информацию!", null);
+                bot.send(answer2);
                 return;
-            case "Вернуться в начало":
+            case RETURN_TO_START:
                 mapButtonsComponents.remove(bot.getUser().getChatId());
                 bot.getUser().updateState(State.DEFAULT);
                 updateState(bot.getUser(), bot);
@@ -57,7 +59,7 @@ public class Logic {
         if (bot.getUser().getState() == State.INGREDIENT) {
             try {
                 String text = bot.getComponentBase().getInfFromComponent(message.getText(), "components");
-                if (Objects.equals(text, "") | text==null) {
+                if (Objects.equals(text, "") | text == null) {
                     text = "Данный компонент пока отсутствует в моей базе, но я работаю над этим!";
                 }
 
@@ -75,8 +77,8 @@ public class Logic {
         }
         if (bot.getUser().getState() == State.ALL) {
             try {
-                List<Button> buttonsComponents=new ArrayList<>();
-                Long chatId=bot.getUser().getChatId();
+                List<Button> buttonsComponents = new ArrayList<>();
+                Long chatId = bot.getUser().getChatId();
                 mapButtonsComponents.put(chatId, buttonsComponents);
                 String textFromMassage = message.getText();
                 String[] componentsList = Utils.messageParser(textFromMassage);
@@ -102,7 +104,6 @@ public class Logic {
 
                     }
                 }
-                //todo в мап добавляется пользователь и список кнопок
                 if (textGoodComponents.isEmpty()) {
                     textGoodComponents = new StringBuilder("Ни одного компонента из состава не нашлось в моей базе, но я работаю над этим!\n");
                     newText = textGoodComponents.toString();
@@ -128,7 +129,7 @@ public class Logic {
         bot.send(answer);
     }
 
-    void processCallback(long chatId, String callback, BeautyBot bot) throws SQLException {
+    void processCallback(String callback, BeautyBot bot) throws SQLException {
         String newText = "";
         List<Button> buttons = new ArrayList<>();
         String component = "";
@@ -177,7 +178,6 @@ public class Logic {
                 } else {
                     newText = "Выберите еще компонент\n";
                     buttons = mapButtonsComponents.get(bot.getUser().getChatId());
-                    //todo достать из хэшмапа
                 }
                 break;
             case YES_DETAIL:
@@ -199,13 +199,13 @@ public class Logic {
                 buttons.add(newButton22);
                 break;
         }
-        Message answ;
+        Message answer;
         if (buttons.isEmpty()) {
-            answ = new Message(newText, null);
+            answer = new Message(newText, null);
         } else {
-            answ = new Message(newText, buttons);
+            answer = new Message(newText, buttons);
         }
-        bot.send(answ);
+        bot.send(answer);
     }
 
 

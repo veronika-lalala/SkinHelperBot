@@ -2,8 +2,6 @@ package bot;
 
 
 import database.WorkWithSQL;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -23,13 +21,11 @@ import java.util.List;
 
 
 public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
-    private static final Logger log = LoggerFactory.getLogger(BeautyBot.class);
     private final TelegramClient telegramClient;
     private final Logic logic;
     private User user;
-    private final WorkWithSQL componentBase = new WorkWithSQL("jdbc:mysql://localhost:3306/bdinfcomp", "root", "qwer", "components");
+    private final WorkWithSQL componentBase = new WorkWithSQL("jdbc:mysql://localhost:3306/mydbtest", "root", "goddeskarina291005", "components");
 
-    //"jdbc:mysql://localhost:3306/bdinfcomp", "root", "qwer", "components"
     public BeautyBot(String botToken) throws SQLException {
         this.telegramClient = new OkHttpTelegramClient(botToken);
         this.logic = new Logic();
@@ -53,7 +49,6 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
     public void consume(Update update) {
 
         if (update.hasMessage() && update.getMessage().hasText()) {
-
             if (user == null) {
                 long chat_id = update.getMessage().getChatId();
                 String userName = update.getMessage().getChat().getFirstName();
@@ -79,7 +74,7 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
             }
             String calldata = update.getCallbackQuery().getData();
             try {
-                logic.processCallback(chat_id_callback, calldata, this);
+                logic.processCallback(calldata, this);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -103,8 +98,7 @@ public class BeautyBot implements LongPollingSingleThreadUpdateConsumer {
         try {
             this.telegramClient.execute(sendMessage);
         } catch (TelegramApiException var3) {
-            TelegramApiException e = var3;
-            throw new RuntimeException(e);
+            throw new RuntimeException(var3);
         }
 
 

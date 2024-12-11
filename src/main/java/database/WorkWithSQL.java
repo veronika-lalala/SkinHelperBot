@@ -27,7 +27,7 @@ public class WorkWithSQL {
         }
     }
 
-    public String getInfFromComponent(String component,String table) throws SQLException {
+    public String getInfFromComponent(String component, String table) throws SQLException {
         String sql = "SELECT inf FROM " + table + " WHERE component = ?";
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setString(1, component);
@@ -40,7 +40,7 @@ public class WorkWithSQL {
         return result;
     }
 
-    public String getDetailInfFromComponent(String component,String table) throws SQLException {
+    public String getDetailInfFromComponent(String component, String table) throws SQLException {
         String sql = "SELECT detailInf FROM " + table + " WHERE component = ?";
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setString(1, component);
@@ -53,12 +53,12 @@ public class WorkWithSQL {
         return result;
     }
 
-    public String getState(long chatId,String table) throws SQLException{
-        String sql="SELECT state FROM "+table+" WHERE idchat = ?";
+    public String getState(long chatId, String table) throws SQLException {
+        String sql = "SELECT state FROM " + table + " WHERE idchat = ?";
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setLong(1, chatId);
         ResultSet resultSet = statement.executeQuery();
-        String result="";
+        String result = "";
         while (resultSet.next()) {
             result = resultSet.getString("state");
         }
@@ -75,16 +75,14 @@ public class WorkWithSQL {
             System.out.println("Пользователь успешно добавлен!");
         }
     }
-    public void updateState(String table,long chatId,State state) throws SQLException{
-        String sql="UPDATE "+ table+ " SET state = ? WHERE idchat = ?";
-        PreparedStatement statement=connection.prepareStatement(sql);
+
+    public void updateState(String table, long chatId, State state) throws SQLException {
+        String sql = "UPDATE " + table + " SET state = ? WHERE idchat = ?";
+        PreparedStatement statement = connection.prepareStatement(sql);
         statement.setString(1, String.valueOf(state));
-        statement.setLong(2,chatId);
+        statement.setLong(2, chatId);
         statement.executeUpdate();
     }
-
-
-
 
 
 }

@@ -2,16 +2,12 @@ package mainpackage;
 
 import bot.BeautyBot;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import config.ConfigLoader;
-
-import java.sql.SQLException;
 
 public class Main {
 
 
-
-    public static void main(String[] args) throws TelegramApiException, SQLException {
+    public static void main(String[] args) {
         String botToken = new ConfigLoader().getProperties().getProperty("bot_token");
         try {
             TelegramBotsLongPollingApplication botsApplication = new TelegramBotsLongPollingApplication();
@@ -32,8 +28,7 @@ public class Main {
 
             botsApplication.close();
         } catch (Exception var7) {
-            Exception e = var7;
-            e.printStackTrace();
+            var7.printStackTrace();
         }
 
 

@@ -10,10 +10,12 @@ public class Message {
         this.text = text;
         this.buttons = buttons;
     }
-    public String getText(){
+
+    public String getText() {
         return text;
     }
-    public List<Button> getButtons(){
+
+    public List<Button> getButtons() {
         return buttons;
     }
 }

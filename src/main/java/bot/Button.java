@@ -5,8 +5,8 @@ public class Button {
     String callback;
 
     public Button(String name, String callback) {
-        this.name=name;
-        this.callback=callback;
+        this.name = name;
+        this.callback = callback;
     }
 
     public String getName() {
