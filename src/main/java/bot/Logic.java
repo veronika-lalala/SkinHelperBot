@@ -5,9 +5,7 @@ import userstate.User;
 import utils.Utils;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 
 public class Logic {
@@ -19,8 +17,8 @@ public class Logic {
     public final static String YES = "Yes";
     public final static String NO = "No";
     public final static String YES_DETAIL = "YesDetail";
-    private List<Button> buttonsComponents = new ArrayList<>();
-    //private Map<Long,List<Button>> buttonsComponents = new HashMap<>();
+    //private List<Button> buttonsComponents = new ArrayList<>();
+    private Map<Long,List<Button>> mapButtonsComponents = new HashMap<>();//когда пользователь нажимает на анализ состава заполняется, когда выходит чистится
 
     void processMessage(Message message, BeautyBot bot) {
         String newText = "";
@@ -43,7 +41,7 @@ public class Logic {
                 bot.send(answ2);
                 return;
             case "Вернуться в начало":
-                buttonsComponents.clear();
+                mapButtonsComponents.remove(bot.getUser().getChatId());
                 bot.getUser().updateState(State.DEFAULT);
                 updateState(bot.getUser(), bot);
                 newText = "1. Я смогу помочь тебе выбрать подходящее уходовое средство, проанализировав состав продукта. Также я расскажу всю необходимую информацию об активных компонентах, и ,кроме того, предупрежу об опасностях для твоей кожи, скрывающихся в составе.\n2. Еще я смогу ответить на твои вопросы об отдельных активных веществах: объясню для чего они применяются, как они влияют на твою кожу, в чем принцип их работы.";
@@ -53,7 +51,6 @@ public class Logic {
                 buttons.add(newButton2);
                 Message newMes = new Message(newText, buttons);
                 bot.send(newMes);
-
                 return;
 
         }
@@ -75,10 +72,12 @@ public class Logic {
             }
             bot.getUser().updateState(State.DEFAULT);
             updateState(bot.getUser(), bot);
-            //todo появляются ещё две кнопки 1) узнать про другой компонент 2)проанализировать состав 3)завершить работу?
         }
         if (bot.getUser().getState() == State.ALL) {
             try {
+                List<Button> buttonsComponents=new ArrayList<>();
+                Long chatId=bot.getUser().getChatId();
+                mapButtonsComponents.put(chatId, buttonsComponents);
                 String textFromMassage = message.getText();
                 String[] componentsList = Utils.messageParser(textFromMassage);
                 StringBuilder textGoodComponents = new StringBuilder();
@@ -95,7 +94,7 @@ public class Logic {
                     } else {
                         component = component.toUpperCase();
                         Button componentButton = new Button(component, "Detailed:" + component);
-                        buttonsComponents.add(componentButton);
+                        mapButtonsComponents.get(chatId).add(componentButton);
                         textGoodComponents.append('•').append(component);
                         textGoodComponents.append(":\n");
                         textGoodComponents.append(inf);
@@ -103,6 +102,7 @@ public class Logic {
 
                     }
                 }
+                //todo в мап добавляется пользователь и список кнопок
                 if (textGoodComponents.isEmpty()) {
                     textGoodComponents = new StringBuilder("Ни одного компонента из состава не нашлось в моей базе, но я работаю над этим!\n");
                     newText = textGoodComponents.toString();
@@ -171,26 +171,27 @@ public class Logic {
                 buttons.add(newButtonNo);
                 break;
             case YES:
-                if (buttonsComponents.isEmpty()) {
+                if (mapButtonsComponents.get(bot.getUser().getChatId()).isEmpty()) {
                     newText = "Для начала введите интересующий вас состав";
                     buttons.add(new Button("Анализ состава", STRUCTURE));
                 } else {
                     newText = "Выберите еще компонент\n";
-                    buttons = buttonsComponents;
+                    buttons = mapButtonsComponents.get(bot.getUser().getChatId());
+                    //todo достать из хэшмапа
                 }
                 break;
             case YES_DETAIL:
-                if (buttonsComponents.isEmpty()) {
+                if (mapButtonsComponents.get(bot.getUser().getChatId()).isEmpty()) {
                     newText = "Для начала введите интересующий вас состав";
                     buttons.add(new Button("Анализ состава", STRUCTURE));
                 } else {
                     newText = "Выберите компонент о котором хотите узнать подробнее";
-                    buttons = buttonsComponents;
+                    buttons = mapButtonsComponents.get(bot.getUser().getChatId());
 
                 }
                 break;
             case NO:
-                buttonsComponents.clear();
+                mapButtonsComponents.remove(bot.getUser().getChatId());
                 newText = "Чем займемся дальше?";
                 Button newButton11 = new Button("Анализ состава", STRUCTURE);
                 Button newButton22 = new Button("Информация о компоненте", COMPONENT);
